@@ -1,0 +1,210 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>JEPTERA | Reviewer companion</title><style>
+:root{--ink:#182e36;--muted:#52666b;--line:#bccbc8;--accent:#08776e;--paper:#fafbf7}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:linear-gradient(120deg,#e8f0e9 0%,var(--paper) 30%,#f6f1e8 100%);color:var(--ink);font:17px/1.6 Georgia,serif}main,header,footer{max-width:1220px;margin:auto;padding:32px}header{padding-top:65px}h1{font-size:clamp(46px,8vw,94px);line-height:1;margin:14px 0;font-weight:normal;letter-spacing:-3px}h2{font-size:32px;font-weight:normal;margin:0 0 16px}h3{font-size:22px;font-weight:normal;margin:10px 0}.eyebrow,nav,.caption,.steps,code{font-family:'Trebuchet MS',sans-serif}.eyebrow{letter-spacing:3px;text-transform:uppercase;color:var(--accent);font-size:13px}a{color:var(--accent);text-underline-offset:4px}a:focus-visible,video:focus-visible{outline:3px solid var(--accent);outline-offset:4px}nav{display:flex;gap:12px 28px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:20px;margin-top:30px}section{padding:40px 0;border-top:1px solid var(--line);scroll-margin-top:16px}.intro{max-width:760px;font-size:22px}.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:20px}.steps a{display:block;text-decoration:none;border-top:3px solid var(--accent);padding-top:14px}.steps strong{display:block;font:30px Georgia,serif}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}.figures{display:grid;grid-template-columns:1fr 1fr;gap:24px}video,img{display:block;width:100%;height:auto;background:white;border:1px solid var(--line)}.caption{font-size:14px;color:var(--muted);margin:10px 0}pre{background:#18363c;color:#f7faf6;padding:22px;overflow:auto;font:14px/1.7 Consolas,monospace}code{font-size:.9em}figure{margin:0}figcaption{font-size:15px;margin-top:10px;color:var(--muted)}footer{font-size:14px;color:var(--muted);border-top:1px solid var(--line)}.note{border-left:3px solid var(--accent);padding-left:18px;max-width:900px}.yaml{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center}svg{width:100%;height:auto} @media(max-width:760px){main,header,footer{padding:24px}header{padding-top:40px}.grid,.figures,.yaml{grid-template-columns:1fr}.steps{grid-template-columns:1fr 1fr}h1{letter-spacing:-1px}section{padding:28px 0}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+.guide{max-width:100%;overflow-wrap:anywhere}.guide>p,.guide>ul{max-width:920px}.guide h3{margin-top:32px;font-size:25px}.guide pre{max-width:100%;overflow-wrap:normal}.guide code{font-family:Consolas,monospace}.guide pre code{font-size:inherit}.table-scroll{max-width:100%;overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:650px;font-size:15px}th,td{text-align:left;padding:12px;border-bottom:1px solid var(--line);vertical-align:top}th{background:#e8f0e9}summary:focus-visible,.table-scroll:focus-visible{outline:3px solid var(--accent)}
+</style></head><body><header><div class="eyebrow">Code / experiments / evidence</div><h1>JEPTERA</h1><p class="intro">JEPA-assisted predictive planning for UAV navigation. A reviewer companion to the implementation, simulation setup and reported results.</p><nav aria-label="Sections"><a href="#start">Get started</a><a href="#gyms">Three gyms</a><a href="#simulators">Three simulators</a><a href="#cities">Three urban maps</a><a href="#figures">Figures</a><a href="#yaml">YAML</a></nav></header><main>
+<section id="start"><h2>Start with one workflow.</h2><div class="steps"><a href="#installation"><strong>01</strong>Install the planner</a><a href="#adapter-guide"><strong>02</strong>Prepare a simulator</a><a href="#gym-guide"><strong>03</strong>Run the gyms</a><a href="#yaml-reference"><strong>04</strong>Read the YAML</a><a href="#gyms"><strong>05</strong>Inspect the evidence</a></div><pre>cd reproducibility
+python -m pip install -e ".[gym]"
+jeptera-gym crossing --output outputs/crossing</pre><p class="note">The released runner uses JEPA-MPC-PID + safety layer. The gym clips below replay selected original paper runs; running the released runner produces separate evidence. Short smoke checks validate integration, not mission completion.</p><p>The source package is distributed separately. All setup instructions are included below.</p></section>
+<section class="guide" id="installation"><div class="eyebrow">Guide 01</div><h2>Install JEPTERA</h2>
+<p>Core installation does not install a simulator. Use Python 3.11 for the gyms.</p>
+<pre><code class="language-sh">cd reproducibility
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
+python -m pip install -e .
+python -B check_release.py
+python -m pip install -e &quot;.[gym]&quot;
+jeptera-gym --help
+jeptera-gym --self-check
+</code></pre>
+<p>The explicit PyTorch command installs CPU-only wheels to avoid CUDA downloads.
+On Windows use <code>py -3.11 -m venv .venv</code> and <code>.venv\Scripts\Activate.ps1</code>.
+PyBullet 3.2.7 may need a local C++ build on Windows; Ubuntu/WSL is recommended.
+Core-only checks work without PyBullet.</p>
+<p>The gym extra pins gym-pybullet-drones to revision
+<code>e712698a05a80728b06572819dcf044596707754</code> and PyBullet to 3.2.7. Git is required
+to fetch the upstream source. Editable installation reflects local code changes.
+A normal <code>python -m pip install .</code> also packages model weights and YAML.</p>
+<p>For native simulators follow <a href="#adapter-guide">adapters.md</a>. ROS 2 Jazzy requires
+its Python 3.12 environment, separately from the gym Python 3.11 venv.
+The offline check validates models, observation context, MPC and safety;
+it does not establish navigation success.</p><p><a href="#start">Back to workflow</a></p></section>
+<section class="guide" id="adapter-guide"><div class="eyebrow">Guide 02</div><h2>Simulator adapters</h2>
+<p>Run commands from <code>reproducibility</code> unless stated otherwise. Install the core with <code>python -m pip install -e .</code>. The three model directories under <code>agentic_uav/artifacts/</code> are required: <code>corridors_v1_actual_seed42</code>, <code>corridors_v1_zero_seed42</code>, and <code>joint_action_ramps_seed42</code>. Runners use <code>agentic_uav.models.inference.ARTIFACTS</code>; model integrity checks remain active. Choose a new <code>--output</code> directory for each run.</p>
+<h3>MuJoCo</h3>
+<p>Install the MuJoCo extra with <code>python -m pip install -e ".[mujoco]"</code>. The adapter requires <a href="https://github.com/tau-intelligence/MuJoCo-drones-gym">tau-intelligence/MuJoCo-drones-gym</a> at commit <code>ca170dc6760d422e47ef46fb3af46f8cd20410eb</code>:</p>
+<pre><code class="language-sh">git clone https://github.com/tau-intelligence/MuJoCo-drones-gym.git
+git -C MuJoCo-drones-gym switch --detach ca170dc6760d422e47ef46fb3af46f8cd20410eb
+python -m pip install -e ./MuJoCo-drones-gym
+python -m agentic_uav.scripts.run_mujoco_navigation --output runs/mujoco_transfer
+python -m agentic_uav.scripts.render_mujoco_run runs/mujoco_transfer
+</code></pre>
+<p>The runner uses native MuJoCo dynamics and PID with an air start. <code>--static-pillar</code> adds the validated cylinder scenario. Render only after the navigation run completes.</p>
+<h3>Gazebo Harmonic / ROS 2 Jazzy</h3>
+<p>On Ubuntu 24.04, install Gazebo Harmonic, ROS 2 Jazzy, <code>ros-jazzy-ros-gz</code> and <code>ros-jazzy-sensor-msgs-py</code>. Source ROS, create a Python 3.12 venv with <code>--system-site-packages</code>, and install <code>python -m pip install -e ".[gazebo]"</code> so <code>rclpy</code> and message types remain available. <code>gazebo/gazebo_transfer.sdf</code> includes the X4 hexacopter, sensors, and world; no external model download is needed. Source ROS in each ROS shell and use the same <code>ROS_DOMAIN_ID</code> and <code>GZ_PARTITION</code> values throughout.</p>
+<p>Shell 1:</p>
+<pre><code class="language-sh">source /opt/ros/jazzy/setup.bash
+export ROS_DOMAIN_ID=42 GZ_PARTITION=agentic_transfer
+gz sim -s --headless-rendering gazebo/gazebo_transfer.sdf
+</code></pre>
+<p>Shell 2, with the same environment:</p>
+<pre><code class="language-sh">ros2 run ros_gz_bridge parameter_bridge --ros-args -p config_file:=$(pwd)/gazebo/gazebo_bridge.yaml
+</code></pre>
+<p>Shell 3, with the same environment, bridges the paused-world stepping service:</p>
+<pre><code class="language-sh">ros2 run ros_gz_bridge parameter_bridge /world/agentic_transfer/control@ros_gz_interfaces/srv/ControlWorld
+</code></pre>
+<p>Shell 4, with the same environment and editable core installed:</p>
+<pre><code class="language-sh">python -m agentic_uav.scripts.run_gazebo_navigation --output runs/gazebo_transfer
+</code></pre>
+<h3>CARLA-Air</h3>
+<p>This adapter connects to CARLA-Air's AirSim RPC server on port <code>41451</code>. Its native dynamics are <strong>SimpleFlight</strong>, not MuJoCo. Install a CARLA-Air build and its matching <code>airsim</code> Python client using that build's upstream instructions; the archived integration used CARLA-Air v0.1.7. See <a href="https://github.com/louiszengCN/CarlaAir/releases/tag/v0.1.7">upstream releases</a> for the native server and matching client. Start a map with a <code>Road_</code> collision surface. <code>carla/road_initialization.json</code> records a Town10HD road 20 example, not a portable spawn pose.</p>
+<p>On Windows, <code>CarlaAir.ps1</code> copies its <code>AirSimConfig/settings.json</code> into the user Documents/AirSim folder on launch. Back up that template and replace it with the supplied <code>carla/settings.json</code> before launching, otherwise the launcher can overwrite your sensor changes. For other launchers, back up existing AirSim user settings, then place <code>carla/settings.json</code> at the settings location used by that build (commonly <code>~/Documents/AirSim/settings.json</code> on Linux or <code>%USERPROFILE%\Documents\AirSim\settings.json</code> on Windows). It selects <code>SimMode: Multirotor</code>, <code>SimpleFlight</code>, and <code>JepteraLidar</code> with 37 channels, 40 m range, full vertical field of view, and <code>SensorLocalFrame</code>. Start Town10HD using the upstream launcher (Windows: <code>./CarlaAir.ps1 Town10HD --no-traffic</code>). Verify RPC before flight. The drone must be disarmed and resting on a road; the preflight rejects an unverified starting contact.</p>
+<pre><code class="language-sh">python carla/test_frames.py
+python carla/test_backend.py
+python carla/test_smoke.py
+python carla/smoke_flight.py
+python carla/run_planner.py --output runs/carla_transfer
+</code></pre>
+<p><code>smoke_flight.py</code> is the required native preflight: it checks takeoff, LiDAR, velocity response, road contact, landing, and disarm. The planner refuses to run without a passed <code>carla/smoke_*/result.json</code>.</p><p><a href="#start">Back to workflow</a></p></section>
+<section class="guide" id="gym-guide"><div class="eyebrow">Guide 03</div><h2>PyBullet gyms</h2>
+<p>Use Python 3.11 on Ubuntu with the package's <code>gym</code> extra. The PyBullet drone dependency is pinned to <code>gym-pybullet-drones</code> commit <code>e712698a05a80728b06572819dcf044596707754</code> in the installer. The runner uses its native velocity PID through <code>AgenticNavAviary</code>.</p>
+<pre><code class="language-bash">jeptera-gym --help
+jeptera-gym --self-check
+jeptera-gym crossing --output runs/crossing
+jeptera-gym mini --seed 1004 --output runs/mini
+jeptera-gym extended --seed 1004 --max-steps 12000 --output runs/extended
+jeptera-gym crossing --gui --config agentic_uav/config/navigation.yaml --output runs/crossing-gui
+</code></pre>
+<p><code>crossing</code>, <code>mini</code>, and <code>extended</code> select the original <code>crossing_multi</code>, <code>mini_gym</code>, and <code>training_gym</code> scenes. Each output path must be new. The runner writes <code>scene.json</code>, <code>report.json</code>, <code>trace.jsonl</code>, crossing telemetry, and JEPA controller diagnostics. Each trace row contains the drone XYZ and quaternion plus every dynamic obstacle XYZ and quaternion. <code>report.json</code> distinguishes stable landing, contact collision, simulator truncation, and the step limit. The control loop uses LiDAR, the rolling voxel map, JEPA MPC, native velocity PID, and the original takeoff and landing mission planner. Obstacle truth enters only physics and output telemetry.</p>
+<p>The package entry point is <code>agentic_uav.gym.run:main</code>. The runner reads <code>ARTIFACTS</code> from <code>agentic_uav.models.inference</code> and expects <code>corridors_v1_actual_seed42/last.pt</code>, <code>corridors_v1_zero_seed42/last.pt</code>, and <code>joint_action_ramps_seed42/original_recalibrated_readout.npz</code> below it. <code>--help</code> avoids simulator imports; <code>--self-check</code> verifies scene conditions without starting PyBullet.</p>
+<h3>Recorded replay</h3>
+<p>The default planning budget is 0.2 s. On slower CPUs, repeated <code>solver_timeout</code> decisions can hold the drone near its start; inspect the controller diagnostics when navigation stalls. The reviewer videos replay selected successful original ablation logs, not fresh runs of this packaged entry point.</p>
+<p>After a run finishes, render from its saved <code>scene.json</code>, <code>trace.jsonl</code>, and <code>report.json</code>:</p>
+<pre><code class="language-bash">python -m agentic_uav.gym.render --self-check
+python -m agentic_uav.gym.render runs/crossing
+python -m agentic_uav.gym.render runs/mini --speed 4 --fps 20
+</code></pre>
+<p>The renderer writes <code>flight.mp4</code> and <code>poster.png</code> beside the trace and refuses to overwrite either. It uses recorded drone and crossing obstacle poses, without simulator steps or planner calls. The white 3D follow view clips displayed wall segments to the camera window; the inset shows the complete scene layout and crossing lanes. The quadcopter drawing is enlarged to 2 m rotor span for legibility and labeled as such; its recorded position and quaternion and the obstacle dimensions remain unchanged. Default playback is 8× at 20 fps, sampling the 30 Hz trace. System <code>ffmpeg</code>, NumPy, and Matplotlib are required.</p><p><a href="#start">Back to workflow</a></p></section>
+<section class="guide" id="yaml-reference"><div class="eyebrow">Guide 04</div><h2>YAML configuration</h2>
+<p>Default: <code>agentic_uav/config/navigation.yaml</code>. Select a profile with
+<code>jeptera-gym crossing --config profile.yaml --output outputs/custom</code>.
+The MuJoCo runner also accepts <code>--config</code>; Gazebo and CARLA use supplied profiles.</p>
+<div class="table-scroll" role="region" aria-label="YAML field reference" tabindex="0"><table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Base value</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>schema_version</code></td>
+<td><code>1</code></td>
+<td>Validated schema version</td>
+</tr>
+<tr>
+<td><code>robot.radius_m</code></td>
+<td><code>0.15</code></td>
+<td>Vehicle collision envelope radius</td>
+</tr>
+<tr>
+<td><code>robot.safety_margin_m</code></td>
+<td><code>0.10</code></td>
+<td>Additional geometric clearance</td>
+</tr>
+<tr>
+<td><code>limits.max_speed_mps</code></td>
+<td><code>5.0</code></td>
+<td>Maximum reference speed</td>
+</tr>
+<tr>
+<td><code>limits.max_vertical_speed_mps</code></td>
+<td><code>1.0</code></td>
+<td>Vertical reference limit</td>
+</tr>
+<tr>
+<td><code>limits.max_acceleration_mps2</code></td>
+<td><code>2.0</code></td>
+<td>Command rate-of-change limit</td>
+</tr>
+<tr>
+<td><code>limits.min_z_m</code>, <code>max_z_m</code></td>
+<td><code>0.05</code>, <code>40.0</code></td>
+<td>Allowed world altitude envelope</td>
+</tr>
+<tr>
+<td><code>control.frequency_hz</code></td>
+<td><code>30</code></td>
+<td>Control observation/update frequency</td>
+</tr>
+<tr>
+<td><code>control.velocity_response_rate_per_s</code></td>
+<td><code>[7.4074,7.4074,18.5185]</code></td>
+<td>Nominal first-order velocity response in XYZ</td>
+</tr>
+<tr>
+<td><code>control.solver_budget_s</code></td>
+<td><code>0.2</code></td>
+<td>Computation budget, not prediction horizon</td>
+</tr>
+<tr>
+<td><code>velocity.input.frame</code></td>
+<td><code>world</code></td>
+<td>Native measured velocity frame</td>
+</tr>
+<tr>
+<td><code>velocity.output.frame</code></td>
+<td><code>world</code></td>
+<td>Native command frame</td>
+</tr>
+<tr>
+<td><code>velocity.*.axes</code></td>
+<td><code>[x,y,z]</code></td>
+<td>Axis order/signs; NED uses <code>[y,x,-z]</code></td>
+</tr>
+<tr>
+<td><code>velocity.*.scale_to_mps</code></td>
+<td><code>1.0</code></td>
+<td>Native units to m/s conversion</td>
+</tr>
+<tr>
+<td><code>velocity.output.encoding</code></td>
+<td><code>direction_speed</code></td>
+<td>Direction XYZ plus speed fraction; adapters may use <code>xyz</code></td>
+</tr>
+<tr>
+<td><code>goal.position_tolerance_m</code></td>
+<td><code>0.5</code></td>
+<td>Goal distance threshold for transfer runners</td>
+</tr>
+<tr>
+<td><code>goal.speed_tolerance_mps</code></td>
+<td><code>0.5</code></td>
+<td>Goal speed threshold for transfer runners</td>
+</tr>
+</tbody>
+</table></div>
+<p>The gym uses its archived takeoff/landing state machine and physical landing
+criteria. The two goal fields do not replace those mission criteria. Values
+are the existing base profile, not a new vehicle calibration. The loader rejects
+unknown/duplicate keys and invalid/nonfinite values. Gym validation requires
+30 Hz and the calibrated 5 m/s speed normalization.</p>
+<pre><code class="language-text">State / LiDAR -&gt; input adapter -&gt; map + tracking + JEPA + MPC + safety
+                                      |
+                               output adapter -&gt; PID -&gt; vehicle
+
+YAML: geometry, limits, nominal response, frames and units
+</code></pre>
+<p>Prediction uses four 0.2 s steps (0.8 s). Changing solver budget does not change
+the prediction horizon and does not prove hard real-time operation. YAML does
+not define sensor extrinsics, RPC ports, ROS topics or native motor PID gains;
+those belong to simulator settings/adapters. New sensor or vehicle dynamics need
+validation and may require readout calibration or retraining.</p><p><a href="#start">Back to workflow</a></p></section>
+<section id="gyms"><div class="eyebrow">Original paper-run replays</div><h2>Three PyBullet gyms</h2><div class="grid"><article><h3>Crossing</h3><video controls playsinline preload="none" poster="media/gym-crossing-poster.png" aria-label="Crossing"><source src="media/gym-crossing.mp4" type="video/mp4"></video><p class="caption">Selected successful JEPA-MPC-PID + safety run, seed 1004, from paper_150_run_0001. Recorded-pose replay with obstacle motion from the original log.</p></article><article><h3>Mini</h3><video controls playsinline preload="none" poster="media/gym-mini-poster.png" aria-label="Mini"><source src="media/gym-mini.mp4" type="video/mp4"></video><p class="caption">Selected successful JEPA-MPC-PID + safety run, seed 1005, from paper_150_run_0001. Recorded-pose replay with obstacle motion from the original log.</p></article><article><h3>Extended</h3><video controls playsinline preload="none" poster="media/gym-extended-poster.png" aria-label="Extended"><source src="media/gym-extended.mp4" type="video/mp4"></video><p class="caption">Selected successful JEPA-MPC-PID + safety run, seed 1004, from paper_150_run_0001. Recorded-pose replay with obstacle motion from the original log.</p></article></div><p class="caption">Replay presentation: white backdrop, drone enlarged to 2 m for visibility, playback 4× at 20 fps. Recorded poses and obstacle motion are reused without rerunning physics. These selected successes do not show that all seeds succeeded.</p></section>
+<section id="simulators"><div class="eyebrow">Archived integration evidence</div><h2>Three simulator interfaces</h2><div class="grid"><article><h3>MuJoCo</h3><video controls playsinline preload="none" poster="../runs/mujoco_straight_speed3/presentation/drone_preview.png" aria-label="MuJoCo"><source src="../runs/mujoco_straight_speed3/presentation/drone.mp4" type="video/mp4"></video><p class="caption">Archived native simulation replay. Air-start transfer; landing was not tested.</p></article><article><h3>Gazebo / ROS 2</h3><video controls playsinline preload="none" poster="../runs/gazebo_straight_cpu_offline/presentation/drone_preview.png" aria-label="Gazebo / ROS 2"><source src="../runs/gazebo_straight_cpu_offline/presentation/drone.mp4" type="video/mp4"></video><p class="caption">Archived native X4 hexacopter integration. Air-start transfer; landing was not tested.</p></article><article><h3>CARLA</h3><video controls playsinline preload="none" poster="../runs/carla_air_native/presentation/poster.png" aria-label="CARLA"><source src="../runs/carla_air_native/presentation/flight.mp4" type="video/mp4"></video><p class="caption">Archived screen recording of CARLA-Air native SimpleFlight, takeoff through landing. No MuJoCo co-simulation.</p></article></div></section>
+<section id="cities"><div class="eyebrow">Archived urban routes</div><h2>City A, City B, City C</h2><div class="grid"><article><h3>City A</h3><video controls playsinline preload="none" poster="media/city-a-poster.png" aria-label="City A"><source src="media/city-a.mp4" type="video/mp4"></video><p class="caption">Archived replay of measured drone poses in the original map. One route completed without collision; no new robustness claim.</p></article><article><h3>City B</h3><video controls playsinline preload="none" poster="media/city-b-poster.png" aria-label="City B"><source src="media/city-b.mp4" type="video/mp4"></video><p class="caption">Archived replay of measured drone poses in the original map. One route completed without collision; no new robustness claim.</p></article><article><h3>City C</h3><video controls playsinline preload="none" poster="media/city-c-poster.png" aria-label="City C"><source src="media/city-c.mp4" type="video/mp4"></video><p class="caption">Archived replay of measured drone poses in the original map. One route completed without collision; no new robustness claim.</p></article></div></section>
+<section id="figures"><h2>Reported results and scene geometry</h2><div class="figures"><figure><img loading="lazy" src="media/training.png" alt="JEPA predictor training and actual-action versus zero-action comparison"><figcaption>Archived JEPA training figure. L1 latent error improves over persistence; the actual versus zero-action gap is small.</figcaption></figure><figure><img loading="lazy" src="media/ablation-success.png" alt="Paper success counts for six configurations across Crossing, Mini and Extended"><figcaption>Paper-reported success counts, ten paired seeds per gym. Full architecture: 28/30. This plot is not a new rerun.</figcaption></figure><figure><img loading="lazy" src="media/gyms.png" alt="Native PyBullet top views of the three gyms with obstacle motion annotations"><figcaption>Native scene renders; arrows summarize obstacle movement.</figcaption></figure></div></section>
+<section id="yaml"><h2>What the YAML connects</h2><div class="yaml"><div><p>The planner core receives normalized state and LiDAR. Its guarded reference reaches the native vehicle controller through an adapter.</p><p>YAML supplies vehicle geometry, motion limits, nominal response, coordinate conversion and goal tolerances. It does not replace simulator sensors, PID tuning or adapter code.</p><a href="#yaml-reference">Field-by-field YAML reference</a></div><svg viewBox="0 0 600 380" role="img" aria-labelledby="yaml-title"><title id="yaml-title">YAML configures shared planning core and native adapters</title><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#08776e"/></marker></defs><g fill="white" stroke="#bccbc8" stroke-width="2"><rect x="170" y="10" width="260" height="65" rx="4"/><rect x="20" y="130" width="160" height="80" rx="4"/><rect x="220" y="130" width="160" height="80" rx="4"/><rect x="420" y="130" width="160" height="80" rx="4"/><rect x="220" y="275" width="160" height="75" rx="4"/></g><g font-family="Georgia,serif" font-size="20" text-anchor="middle" fill="#182e36"><text x="300" y="50">Platform YAML</text><text x="100" y="165">State + LiDAR</text><text x="100" y="190" font-size="15">input adapter</text><text x="300" y="165">JEPA + MPC</text><text x="300" y="190" font-size="15">safety checks</text><text x="500" y="165">Velocity</text><text x="500" y="190" font-size="15">output adapter</text><text x="300" y="307">PID + vehicle</text><text x="300" y="332" font-size="15">native dynamics</text></g><g fill="none" stroke="#08776e" stroke-width="2" marker-end="url(#arrow)"><path d="M300 75V125"/><path d="M180 170H215"/><path d="M380 170H415"/><path d="M500 210V310H385"/><path d="M220 310H100V215"/></g></svg></div></section></main><footer>Results accompany the research implementation. Videos are labeled as native recording or recorded-trajectory replay. This public preview is separate from the source repository and is not an anonymous review link.</footer></body></html>
